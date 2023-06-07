@@ -29,11 +29,10 @@
 			]
 		}
 	},
-	"remoteEnv": {
-		"KUBECONFIG": "${containerWorkspaceFolder}/config"
-	},
-
+	
 	"initializeCommand": ["sh", "-c", "if [ ! -z \"$(docker ps -f name=kind-control-plane -q)\" ]; then docker exec kind-control-plane cat /etc/kubernetes/admin.conf > config; fi"],
+
+	"postCreateCommand": ["sh", "-c", "mkdir -p /root/.kube && mv ${containerWorkspaceFolder}/config /root/.kube/config"],
 
 	// docker args to run the container, connect to KinD network
 	"runArgs": [ "--network=kind" ]

@@ -33,17 +33,39 @@ RUN go install github.com/ramya-rao-a/go-outline@latest         && \
 
 
 RUN if [ "${GO_ARCH}" == "alpine" ]; then \
-        apk add git curl bash alpine-sdk; \
+        apk add git curl bash alpine-sdk bash-completion ncurses yq helm && \
+        sed -i 's/\/bin\/ash/\/bin\/bash/g' /etc/passwd; \
     fi
 
+# Install basic tools
+RUN echo "alias ll='ls -al'"                         >> /root/.bashrc
 
 
 # Install kubectl
 RUN if [ "${INSTALL_KUBECTL}" == "true" ]; then \
         export ARCH=$(case $(uname -m) in x86_64) echo -n amd64 ;; aarch64) echo -n arm64 ;; *) echo -n $(uname -m) ;; esac) && \
-        export OS=$(uname | awk '{print tolower($0)}') && \
-        curl -LO "https://dl.k8s.io/release/v${KUBECTL_VER}/bin/${OS}/${ARCH}/kubectl" && \
-        chmod +x kubectl && mv kubectl /usr/local/bin/kubectl; \
+        export OS=$(uname | awk '{print tolower($0)}')                                  && \
+        curl -LO "https://dl.k8s.io/release/v${KUBECTL_VER}/bin/${OS}/${ARCH}/kubectl"  && \
+        chmod +x kubectl && mv kubectl /usr/local/bin/kubectl                           && \
+        echo 'source <(kubectl completion bash)'                    >> /root/.bashrc    && \
+        echo 'alias k=kubectl'                                      >> /root/.bashrc    && \
+        echo 'complete -o default -F __start_kubectl k'             >> /root/.bashrc    && \
+        git -C /opt clone https://github.com/jonmosco/kube-ps1.git                      && \
+        echo 'source /opt/kube-ps1/kube-ps1.sh'                     >> /root/.bashrc    && \
+        echo "PS1='[\u@\h \W \$(kube_ps1)]\$ '"                     >> /root/.bashrc    && \
+        echo "KUBE_PS1_SYMBOL_COLOR=''"                             >> /root/.bashrc    && \
+        echo "KUBE_PS1_CTX_COLOR=''"                                >> /root/.bashrc    && \
+        echo "KUBE_PS1_NS_COLOR=''"                                 >> /root/.bashrc    && \
+        echo "KUBE_PS1_SYMBOL_ENABLE='false'"                       >> /root/.bashrc    && \
+        cd "$(mktemp -d)"                                           && \
+        KREW="krew-${OS}_${ARCH}"                                   && \
+        curl -fsSLO "https://github.com/kubernetes-sigs/krew/releases/latest/download/${KREW}.tar.gz" && \
+        tar zxvf "${KREW}.tar.gz"                                   && \
+        echo 'export PATH="${KREW_ROOT:-$HOME/.krew}/bin:$PATH"'    >> /root/.bashrc    && \
+        ./"${KREW}" install krew                                    && \
+        ./"${KREW}" install ctx                                     && \
+        ./"${KREW}" install ns                                      && \
+        ./"${KREW}" install neat                                    ;\
     fi
 
 # Install kubebuilder
