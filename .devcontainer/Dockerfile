@@ -10,16 +10,10 @@ ARG KUBEBUILDER_VER=3.10.0
 FROM golang:${GO_VER}-${GO_ARCH}
 
 # https://blog.scottchayaa.com/post/2018/11/04/docker-arg-env-variable/#arg
-# ARG need to be declared again after FROM
+# 1. ARG need to be declared again after FROM
+# 2. To get benfit of ARG, you need to put ARG as close as to where it is used.
+#    If you change value when building, it will invalidate cache and rebuild.
 
-ARG OPERATOR_VER
-ARG GO_VER
-ARG GO_ARCH
-ARG INSTALL_KUBECTL
-ARG INSTALL_OPERATOR_SDK
-ARG KUBECTL_VER
-ARG INSTALL_KUBEBUILDER
-ARG KUBEBUILDER_VER
 
 # Install Golang extension package tools
 RUN go install github.com/ramya-rao-a/go-outline@latest         && \
@@ -31,7 +25,7 @@ RUN go install github.com/ramya-rao-a/go-outline@latest         && \
     go install honnef.co/go/tools/cmd/staticcheck@latest        && \
     go install golang.org/x/tools/gopls@latest
 
-
+ARG GO_ARCH
 RUN if [ "${GO_ARCH}" == "alpine" ]; then \
         apk add git curl bash alpine-sdk bash-completion ncurses yq helm && \
         sed -i 's/\/bin\/ash/\/bin\/bash/g' /etc/passwd; \
@@ -40,7 +34,8 @@ RUN if [ "${GO_ARCH}" == "alpine" ]; then \
 # Install basic tools
 RUN echo "alias ll='ls -al'"                         >> /root/.bashrc
 
-
+ARG KUBECTL_VER
+ARG INSTALL_KUBECTL
 # Install kubectl
 RUN if [ "${INSTALL_KUBECTL}" == "true" ]; then \
         export ARCH=$(case $(uname -m) in x86_64) echo -n amd64 ;; aarch64) echo -n arm64 ;; *) echo -n $(uname -m) ;; esac) && \
@@ -68,6 +63,9 @@ RUN if [ "${INSTALL_KUBECTL}" == "true" ]; then \
         ./"${KREW}" install neat                                    ;\
     fi
 
+
+ARG INSTALL_KUBEBUILDER
+ARG KUBEBUILDER_VER
 # Install kubebuilder
 RUN if [ "${INSTALL_KUBEBUILDER}" == "true" ]; then \
         export ARCH=$(case $(uname -m) in x86_64) echo -n amd64 ;; aarch64) echo -n arm64 ;; *) echo -n $(uname -m) ;; esac) && \
@@ -78,6 +76,9 @@ RUN if [ "${INSTALL_KUBEBUILDER}" == "true" ]; then \
         mv kubebuilder_${OS}_${ARCH} /usr/local/bin/kubebuilder; \
     fi
 
+
+ARG OPERATOR_VER
+ARG INSTALL_OPERATOR_SDK
 # Install operator-sdk 
 RUN if [ "${INSTALL_OPERATOR_SDK}" == "true" ]; then \
         export ARCH=$(case $(uname -m) in x86_64) echo -n amd64 ;; aarch64) echo -n arm64 ;; *) echo -n $(uname -m) ;; esac) && \
