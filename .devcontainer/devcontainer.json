@@ -25,7 +25,8 @@
 				"golang.Go",
 				"genieai.chatgpt-vscode",
 				"AndrewButson.vscode-openai",
-				"GitHub.copilot"
+				"GitHub.copilot",
+				"humao.rest-client"
 			]
 		}
 	},

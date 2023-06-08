@@ -1,0 +1,96 @@
+@localhost = 127.0.0.1
+@port = 8001
+@host = http://{{localhost}}:{{port}}
+
+
+### create configmap
+POST {{host}}/api/v1/namespaces/default/configmaps
+Content-Type: application/yaml
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: nginx-config
+data:
+    key1: value1
+    key2: value2
+
+
+### get configmap
+GET {{host}}/api/v1/namespaces/default/configmaps/nginx-config
+
+
+### update configmap
+# If use PUT, complete resource must be provided
+
+PUT {{host}}/api/v1/namespaces/default/configmaps/nginx-config
+Content-Type: application/yaml
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: nginx-config
+data:
+    key1: value11
+
+
+
+### update configmap with older resourceVersion
+# If PUT with older resourceVersion, 409 Conflict will be returned
+
+PUT {{host}}/api/v1/namespaces/default/configmaps/nginx-config
+Content-Type: application/yaml
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: nginx-config
+  resourceVersion: "3453770"
+data:
+    key1: value1
+
+
+### patch partion of configmap
+
+# If use PATCH, only partion of resource can be provided
+
+# Default strategy is Merge. If use Merge strategy, only presented key-value in patch will be patched, but not present in the patch will remain unchanged.
+
+# patch value of key1 to value111
+PATCH {{host}}/api/v1/namespaces/default/configmaps/nginx-config
+Content-Type: application/strategic-merge-patch+json
+
+{
+    "data": {
+        "key1": "value111"
+    }
+}
+
+
+### 
+
+# add of key3 with value3. Not present in the patch will remain unchanged.
+PATCH {{host}}/api/v1/namespaces/default/configmaps/nginx-config
+Content-Type: application/strategic-merge-patch+json
+
+{
+    "data": {
+        "key3": "value3"
+    }
+}
+
+### 
+# change default strategy to replace. The whole data will be replaced by the patch.
+PATCH {{host}}/api/v1/namespaces/default/configmaps/nginx-config
+Content-Type: application/strategic-merge-patch+json
+
+{
+    "data": {
+        "$patch": "replace",
+        "key3": "value3"
+    }
+}
+
+### Delete configmap
+
+DELETE {{host}}/api/v1/namespaces/default/configmaps/nginx-config

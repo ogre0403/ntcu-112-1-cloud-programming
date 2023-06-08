@@ -1,0 +1,27 @@
+@localhost = 127.0.0.1
+@port = 8001
+@host = http://{{localhost}}:{{port}}
+
+### Create resource
+
+POST {{host}}/api/v1/namespaces/default/pods
+Content-Type: application/yaml
+
+apiVersion: v1
+kind: Pod
+metadata:
+  name: nginx
+spec:
+  containers:
+  - image: nginx
+    name: nginx
+
+###  Get resource
+
+GET {{host}}/api/v1/namespaces/default/pods/nginx
+
+### Delete resource
+
+DELETE {{host}}/api/v1/namespaces/default/pods/nginx
+
+

@@ -1,0 +1,73 @@
+@localhost = 127.0.0.1
+@port = 8001
+@host = http://{{localhost}}:{{port}}
+
+
+
+
+### get configmap
+GET {{host}}/api/v1/namespaces/default/configmaps/nginx-config
+
+
+### Server Side Apply
+
+# resource can be created if it does not exist
+
+PATCH {{host}}/api/v1/namespaces/default/configmaps/nginx-config?fieldManager=vscode-1
+Content-Type: application/apply-patch+yaml
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: nginx-config
+data:
+    key1: value1
+    key2: value2
+
+
+### 
+
+# patch same resource but different fields with different fieldManager. This would be OK.
+
+PATCH {{host}}/api/v1/namespaces/default/configmaps/nginx-config?fieldManager=vscode-2
+Content-Type: application/apply-patch+yaml
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: nginx-config
+data:
+    key3: value3
+
+### 
+
+# FAIL. patch same resource and the same fields, but with differnet fieldManager
+
+PATCH {{host}}/api/v1/namespaces/default/configmaps/nginx-config?fieldManager=vscode-2
+Content-Type: application/apply-patch+yaml
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: nginx-config
+data:
+    key1: value3
+
+
+###
+
+# force to patch same resource and the same fields, but with differnet fieldManager
+PATCH {{host}}/api/v1/namespaces/default/configmaps/nginx-config
+    ?fieldManager=vscode-2
+    &force=true
+Content-Type: application/apply-patch+yaml
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: nginx-config
+data:
+    key1: value3
+
+### Delete configmap
+DELETE {{host}}/api/v1/namespaces/default/configmaps/nginx-config
